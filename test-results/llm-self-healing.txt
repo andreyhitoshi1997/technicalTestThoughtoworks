@@ -1,71 +1,70 @@
-Para tornar o código mais resiliente e auto adaptável, além de reduzir a ocorrência de falsos positivos ou falhas intermitentes, podemos implementar várias boas práticas nos testes. Abaixo, seguem sugestões específicas de melhorias para cada parte do código fornecido:
+Para tornar os testes mais resilientes e adaptáveis, é importante implementar algumas melhorias no código atual. Abaixo estão algumas sugestões:
 
-### 1. Relatório de Testes
-O relatório JSON apenas informa que o teste falhou, sem detalhes adicionais. Uma melhoria seria configurar um relatório mais detalhado que possa incluir mensagens de erro, capturas de tela das falhas e logs de console, o que é essencial para diagnósticos mais eficazes.
+### 1. Timeout e Esperas
 
-### 2. Código `steps.js`
+É essencial evitar intermitências causadas por atrasos no carregamento de elementos ou páginas. Adicione condições explícitas de espera para garantir que os elementos estejam presentes antes de interagir com eles. Isso ajuda a evitar falhas devido a tempos de carregamento variados. Utilize funções como `page.waitForSelector`:
 
-#### Inicialização e fechamento do navegador
-**Problema:** Atualmente, os browsers são fechados após cada teste. Isso pode desacelerar a suíte de testes significativamente.
-**Sugestão de melhoria:** Mover a inicialização do browser para um escopo mais amplo (por exemplo, antes de todos os testes) e garantir que seja fechado após toda a suíte.
 ```javascript
-BeforeAll(async function () {
-  this.browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
-});
+async navigate(url) {
+  await this.page.goto(url);
+  await this.page.waitForSelector('#departing', { timeout: 5000 });
+}
+```
 
-AfterAll(async function () {
+### 2. Retentativas (Retries)
+
+Implemente retentativas automáticas para ações que podem falhar esporadicamente devido à instabilidade de rede ou outros fatores externos. O Playwright permite configurar retries a nível de teste.
+
+### 3. Aprimoramento de Seletores
+
+Utilize seletores mais robustos que sejam menos propensos a mudanças. Em vez de confiar apenas em IDs ou locais, use seletores mais precisos e contextuais. Por exemplo:
+
+```javascript
+this.searchButton = page.locator('button:has-text("Search")'); // Se o texto do botão for fixo
+```
+
+### 4. Captura de Erro Detalhada
+
+Aumente a visibilidade sobre por que testes falham, especialmente se for falta de uma resposta esperada. Adicione logs mais detalhados ou capture screenshots ao falhar:
+
+```javascript
+After(async function (testCase) {
+  if (testCase.result.status === 'failed') {
+    await this.page.screenshot({ path: `screenshots/${testCase.pickle.name}.png`, fullPage: true });
+  }
+  await this.context.close();
   await this.browser.close();
 });
 ```
 
-#### Manipulação de tempo e esperas
-**Problema:** A navegação é feita imediatamente sem verificar se a página está completamente carregada.
-**Sugestão de melhoria:** Implementar esperas inteligentes usando Playwright para garantir que os elementos estejam prontos antes da interação.
+### 5. Self-healing
+
+Para self-healing, ferramentas de self-healing de seletores poderiam ser integradas ou desenvolvidas, onde o script tenta encontrar automaticamente um elemento substituto quando o seletor inicial falha. Essa implementação muitas vezes requer uma análise mais complexa da interface e não é trivial apenas com Playwright, mas ferramentas externas podem ajudar nesse aspecto.
+
+### 6. Separação de Configurações Variáveis
+
+Adicione configurações para valores como tempos de espera em um arquivo de configuração separado (`config.js`), facilitando ajustes sem necessidade de modificar o código principal.
+
 ```javascript
-Given('I am on the Mars Air homepage', async function () {
-  this.page = await this.context.newPage();
-  this.marsAirPage = new MarsAirPage(this.page);
-  await this.marsAirPage.navigate(baseUrl);
-  await this.page.waitForLoadState('domcontentloaded'); // Aguarda o carregamento completo do DOM.
-});
+const config = {
+  navigationalTimeout: 5000,
+  ...
+};
+
+await this.page.waitForSelector('#departing', { timeout: config.navigationalTimeout });
 ```
 
-### 3. Código `MarsAirPage.js`
+### 7. Constantes Promocionais
 
-#### Localizadores resilientes
-**Problema:** Os selectores estão muito específicos e podem quebrar se houver uma ligeira modificação na estrutura HTML.
-**Sugestão de melhoria:** Tornar os selectores mais robustos e significativos. Adicionar verificações para garantir a presença de elementos antes das interações.
+Ao invés de passar strings diretamente para os testes, se possível, use constantes ou enums que faciltam manutenção quando houver mudanças:
+
 ```javascript
-constructor(page) {
-  this.page = page;
-  this.departingSelect = page.locator('#departing');
-  this.returningSelect = page.locator('#returning');
-  this.promoCodeInput = page.locator('#promotional_code', { timeout: 5000 });
-  this.searchButton = page.locator('input[type="submit"]');
-  this.resultText = page.locator('#content > p:has-text("Unfortunately,")'); // Torna-se mais resistente a mudanças estruturais.
-}
+const PROMO_CODES = {
+  SUMMER: 'SUMMER2023',
+  WINTER: 'WINTER2023',
+};
 
-async searchFlights(departing, returning, promoCode) {
-  await Promise.all([
-    this.departingSelect.selectOption(departing),
-    this.returningSelect.selectOption(returning),
-    this.promoCodeInput.fill(promoCode) // `fill` melhor que `type` para velocidade e robustez.
-  ]);
-  await this.searchButton.click();
-  await this.page.waitForLoadState('networkidle'); // Garante que todas as requisições estejam completas.
-}
+await this.marsAirPage.searchFlights(departing, returning, PROMO_CODES.SUMMER);
 ```
 
-#### Auto recuperação e try-catch
-**Problema:** Não há tratamento de exceções para buscar elementos, o que pode resultar em falhas não manejadas.
-**Sugestão de melhoria:** Implicar um block try-catch para capturar e tratar exceções durante a execução dos testes.
-```javascript
-try {
-  await this.page.locator('some-selector').click();
-} catch (error) {
-  console.error('Erro ao clicar no elemento:', error);
-  // Opcional: Tentar uma recuperação ou log mais detalhado.
-}
-```
-
-Estas mudanças aumentarão a resiliência dos testes, ajudando a evitar resultados falso-positivos e falhas ocasionais, além de facilitar a manutenção futura do código.
+Essas mudanças não só tornarão os testes mais confiáveis, mas também mais fáceis de manter e adaptar ao longo do tempo.
