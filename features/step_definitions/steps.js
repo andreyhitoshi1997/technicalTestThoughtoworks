@@ -5,7 +5,7 @@ const { MarsAirPage } = require('../../pages/MarsAirPage');
 const { baseUrl } = require('../../helpers/config');
 
 Before(async function () {
-  this.browser = await chromium.launch({ headless: false });
+  this.browser = await chromium.launch({ headless: true });
   this.context = await this.browser.newContext();
 });
 
