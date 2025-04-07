@@ -11,8 +11,6 @@ export default defineConfig({
         ['json', { outputFile: 'test-results/results.json' }],
     ],
     use: {
-        baseURL: 'https://marsair.recruiting.thoughtworks.net/AndreyOnoue',
-        headless: true,
         trace: 'on-first-retry',
     },
     projects: [

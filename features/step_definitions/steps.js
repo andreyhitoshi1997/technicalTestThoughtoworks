@@ -2,6 +2,7 @@ const { Given, When, Then, Before, After } = require('@cucumber/cucumber');
 const { expect } = require('@playwright/test');
 const { chromium } = require('playwright');
 const { MarsAirPage } = require('../../pages/MarsAirPage');
+const { baseUrl } = require('../../helpers/config');
 
 Before(async function () {
   this.browser = await chromium.launch({ headless: false });
@@ -16,7 +17,7 @@ After(async function () {
 Given('I am on the Mars Air homepage', async function () {
   const page = await this.context.newPage();
   this.marsAirPage = new MarsAirPage(page);
-  await this.marsAirPage.navigate('https://marsair.recruiting.thoughtworks.net/AndreyOnoue');
+  await this.marsAirPage.navigate(baseUrl);
 });
 
 When('I search for a flight with departing {string} and returning {string} and a {string}', async function (departing, returning, promoCode) {

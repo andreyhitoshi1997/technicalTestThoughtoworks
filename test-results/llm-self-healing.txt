@@ -1,57 +1,103 @@
-Para tornar o teste mais resiliente, auto adaptável (self-healing) e reduzir a ocorrência de falsos positivos ou falhas intermitentes, aqui estão algumas sugestões de melhorias para o código no `steps.js` e `MarsAirPage.js`:
+Para tornar o código mais resiliente e reduzir falsos positivos ou falhas intermitentes, vou propor algumas melhorias tanto para o arquivo `steps.js` como para a page object `MarsAirPage.js`. Aqui estão as sugestões:
 
-1. **Uso de Timeouts e Retentativas**:
+### 1. Uso do modo headless
 
-   Quando lidamos com páginas da web, é comum que os elementos demorem um pouco para serem carregados. Podemos adicionar tempos de espera (timeouts) e implementar um mecanismo de tentativas para tornar os testes mais robustos contra atrasos na resposta do servidor ou elementos que demoram para carregar.
+**Motivo:** Executar em modo headless pode evitar que inconsistências no ambiente gráfico causem falhas nos testes.
 
-   ```javascript
-   async searchFlights(departing, returning, promoCode) {
-     await this.departingSelect.waitForElementState('visible', { timeout: 5000 });
-     await this.departingSelect.selectOption(departing);
-     await this.returningSelect.waitForElementState('visible', { timeout: 5000 });
-     await this.returningSelect.selectOption(returning);
-     await this.promoCodeInput.waitForElementState('visible', { timeout: 5000 });
-     await this.promoCodeInput.fill(promoCode);
-     await this.searchButton.waitForElementState('enabled', { timeout: 5000 });
-     await this.searchButton.click();
-   }
-   ```
+**Alteração sugerida em `steps.js`:**
 
-2. **Captura de Logs/Capturas de Tela ao Falhar**:
+Atualmente, a configuração do navegador está em headful:
 
-   Implementar captura de tela e registro de logs em caso de falha pode ajudar a diagnosticar problemas intermitentes.
+```js
+this.browser = await chromium.launch({ headless: false });
+```
 
-   ```javascript
-   After(async function (scenario) {
-     if (scenario.result.status === 'failed') {
-       const screenshot = await this.page.screenshot({ path: `screenshots/${scenario.pickle.name}.png`, fullPage: true });
-       console.log(`Screenshot saved: ${screenshot}`);
-     }
-     await this.context.close();
-     await this.browser.close();
-   });
-   ```
+Alterar para:
 
-3. **Verificação Condicional do Resultado**:
+```js
+this.browser = await chromium.launch({ headless: true });
+```
 
-   Ao invés de uma verificação rígida, implementar uma verificação condicional pode tornar os testes menos suscetíveis a pequenas mudanças no texto exato retornado pela aplicação.
+### 2. Aguardar elementos antes de interagir
 
-   ```javascript
-   Then('I should see the flight search result', async function () {
-     const result = await this.marsAirPage.resultText.innerText();
-     const possibleResults = ['Unfortunately,', 'Congratulations,']; // Possíveis estado que o teste considera válidos
-     expect(possibleResults.some(substring => result.includes(substring))).toBeTruthy();
-   });
-   ```
+**Motivo:** Assegurar que os elementos estejam disponíveis e visíveis pode evitar falhas intermitentes durante as interações.
 
-4. **Uso de Versões mais Recentes e Melhoria da Configuração de Teste**:
+**Alteração sugerida em `MarsAirPage.js`:**
 
-   Certifique-se de que todas as dependências e o próprio Playwright estejam nas versões mais recentes para se beneficiar das melhorias e correções de bugs.
+No método `navigate`, adicione uma espera explícita para assegurar que a página esteja carregada:
 
-   Verifique as configurações do Playwright em termos de rede, cache, e outros, que podem estar afetando os testes.
+```js
+async navigate(url) {
+  await this.page.goto(url);
+  await this.page.waitForLoadState('networkidle');
+}
+```
 
-5. **Manter as Sessões Limpa**:
+No método `searchFlights`, aguarde explicitamente pela presença dos elementos:
 
-   Certifique-se de que após cada teste a sessão está limpa para que o estado de um teste não interfira em outro. Já está parcialmente coberto mas garantir que o contexto está completamente limpo é crucial.
+```js
+async searchFlights(departing, returning, promoCode) {
+  await this.departingSelect.waitFor();
+  await this.departingSelect.selectOption(departing);
+  
+  await this.returningSelect.waitFor();
+  await this.returningSelect.selectOption(returning);
+  
+  await this.promoCodeInput.waitFor();
+  await this.promoCodeInput.type(promoCode);
+  
+  await this.searchButton.waitFor();
+  await this.searchButton.click();
+}
+```
 
-Ao aplicar estas boas práticas, os testes devem se tornar mais robustos e menos propensos a falhas não relacionadas a problemas reais da aplicação.
+### 3. Self-healing com localização robusta de elementos
+
+**Motivo:** Usar seletores mais robustos para elementos pode ajudar na auto-recuperação caso elementos mudem de posição ou identificadores.
+
+**Alteração sugerida em `MarsAirPage.js`:**
+
+Use seletores que não dependem de estruturas específicas ou mudanças frequentes:
+
+```js
+this.departingSelect = page.locator('select[name="departing"]');
+this.returningSelect = page.locator('select[name="returning"]');
+this.promoCodeInput = page.locator('input[name="promotional_code"]');
+this.searchButton = page.locator('input[type="submit"]');
+this.resultText = page.locator('#content p:not(:empty)'); // Para evitar dependência do índice do parágrafo
+```
+
+### 4. Integração de logs e screenshots
+
+**Motivo:** Capturar logs e screenshots pode ajudar a diagnosticar problemas em testes falhos.
+
+**Alteração sugerida em `steps.js`:**
+
+No hook `After`, capture um screenshot em caso de falha:
+
+```js
+After(async function (scenario) {
+  if (scenario.result.status === 'failed') {
+    await this.marsAirPage.page.screenshot({ path: `screenshots/${scenario.pickle.name}.png` });
+  }
+  await this.context.close();
+  await this.browser.close();
+});
+```
+
+### 5. Tratamento para falsos negativos
+
+**Motivo:** Comparações textuais exatas podem ser esmagadoras; verificações mais tolerantes podem reduzir falsos negativos.
+
+**Alteração sugerida no step `Then` em `steps.js`:**
+
+Em vez de verificar um texto específico, procure palavras-chave ou use regex:
+
+```js
+Then('I should see the flight search result', async function () {
+  const result = await this.marsAirPage.resultText.textContent();
+  expect(result).toMatch(/Unfortunately|No flights available/); // Aceitar qualquer uma das mensagens de erro
+});
+```
+
+A aplicação dessas melhorias tornará o teste mais robusto, reduzindo a incerteza e aumentando a confiabilidade dos resultados de teste.
