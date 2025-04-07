@@ -11,31 +11,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout do repositório
+      - name: Checkout do repositório
         uses: actions/checkout@v3
 
-      - name: 🔧 Configurar Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      - name: 📦 Instalar dependências
+      - name: Instalar dependências
         run: npm install
 
-      - name: 🧪 Instalar navegadores do Playwright
+      - name: Instalar navegadores do Playwright
         run: npx playwright install --with-deps
 
-      - name: 🚀 Executar testes Cucumber com Playwright
+      - name: Executar testes Cucumber com Playwright
         run: npm run test
 
-      - name: 🧠 Analisar com LLM (pular se SKIP_LLM=true)
+      - name: Analisar com LLM (pular se SKIP_LLM=true)
         if: env.SKIP_LLM != 'true'
         run: npm run analyze
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SKIP_LLM: ${{ env.SKIP_LLM }}
 
-      - name: 📤 Artefato: Relatórios de Teste
+      - name: Relatórios de Teste
         uses: actions/upload-artifact@v3
         with:
           name: playwright-reports
