@@ -6,51 +6,64 @@ const path = require('path');
 config();
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY,
 });
 
 async function parseJsonReport(filePath) {
-  if (!fs.existsSync(filePath)) {
+    if (!fs.existsSync(filePath)) {
     throw new Error(`Arquivo não encontrado: ${filePath}`);
-  }
+}
 
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(raw);
+const raw = fs.readFileSync(filePath, 'utf-8');
+    return JSON.parse(raw);
 }
 
 async function checkLLMFromJSONReport() {
-  const filePath = path.resolve(__dirname, '../test-results/last-run.json');
+const filePath = path.resolve(__dirname, '../test-results/last-run.json');
 
-  try {
+try {
     const report = await parseJsonReport(filePath);
 
+    const automationCode = fs.readFileSync(path.resolve(__dirname, '../features/step_definitions/steps.js'), 'utf-8');
+    const pageObject = fs.readFileSync(path.resolve(__dirname, '../pages/MarsAirPage.js'), 'utf-8');
+
     const prompt = `
-Você é um engenheiro de QA com foco em automação. 
-A seguir está um relatório de testes automatizados em JSON gerado com Playwright. 
-Analise os resultados, identifique possíveis falsos positivos e sugira melhorias na automação:
+        Você é um engenheiro sênior de QA com foco em automação e testes auto recuperáveis (self-healing).
+        A seguir estão:
+        1. O relatório de testes em JSON com Playwright.
+        2. O código atual do step (steps.js).
+        3. O código atual da page object (MarsAirPage.js).
 
-${JSON.stringify(report, null, 2)}
+        Analise o relatório e proponha **melhorias específicas no código** para torná-lo mais resiliente, auto adaptável (self-healing) e evitar falsos positivos ou falhas intermitentes.
 
-Responda em português com sugestões técnicas objetivas.
-`;
+        ### Relatório JSON:
+        ${JSON.stringify(report, null, 2)}
+
+        ### Código steps.js:
+        ${automationCode}
+
+        ### Código MarsAirPage.js:
+        ${pageObject}
+
+        Retorne sugestões de mudança com base nas boas práticas, explicando o motivo de cada ajuste.
+        Responda em português e, se possível, cite trechos de código com a melhoria aplicada.
+        `;
 
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: prompt }],
     });
 
     const result = response.choices[0].message.content;
-    console.log('\n[🔍 INSIGHTS DA LLM]');
+    console.log('\n[🤖 SELF-HEALING SUGESTÕES]');
     console.log(result);
 
-    const outputPath = path.resolve(__dirname, '../test-results/llm-analysis.txt');
-    fs.writeFileSync(outputPath, result, 'utf-8');
-  } catch (err) {
+    fs.writeFileSync(path.resolve(__dirname, '../test-results/llm-self-healing.txt'), result, 'utf-8');
+} catch (err) {
     console.error(`❌ Erro ao processar análise LLM: ${err.message}`);
-    console.log(`ℹ️ Verifique se o arquivo JSON de testes foi gerado em: ${filePath}`);
-  }
+}
 }
 
 module.exports = {
-  checkLLMFromJSONReport,
+    checkLLMFromJSONReport,
 };

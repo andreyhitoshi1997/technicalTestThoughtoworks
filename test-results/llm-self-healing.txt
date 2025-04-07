@@ -1,0 +1,57 @@
+Para tornar o teste mais resiliente, auto adaptável (self-healing) e reduzir a ocorrência de falsos positivos ou falhas intermitentes, aqui estão algumas sugestões de melhorias para o código no `steps.js` e `MarsAirPage.js`:
+
+1. **Uso de Timeouts e Retentativas**:
+
+   Quando lidamos com páginas da web, é comum que os elementos demorem um pouco para serem carregados. Podemos adicionar tempos de espera (timeouts) e implementar um mecanismo de tentativas para tornar os testes mais robustos contra atrasos na resposta do servidor ou elementos que demoram para carregar.
+
+   ```javascript
+   async searchFlights(departing, returning, promoCode) {
+     await this.departingSelect.waitForElementState('visible', { timeout: 5000 });
+     await this.departingSelect.selectOption(departing);
+     await this.returningSelect.waitForElementState('visible', { timeout: 5000 });
+     await this.returningSelect.selectOption(returning);
+     await this.promoCodeInput.waitForElementState('visible', { timeout: 5000 });
+     await this.promoCodeInput.fill(promoCode);
+     await this.searchButton.waitForElementState('enabled', { timeout: 5000 });
+     await this.searchButton.click();
+   }
+   ```
+
+2. **Captura de Logs/Capturas de Tela ao Falhar**:
+
+   Implementar captura de tela e registro de logs em caso de falha pode ajudar a diagnosticar problemas intermitentes.
+
+   ```javascript
+   After(async function (scenario) {
+     if (scenario.result.status === 'failed') {
+       const screenshot = await this.page.screenshot({ path: `screenshots/${scenario.pickle.name}.png`, fullPage: true });
+       console.log(`Screenshot saved: ${screenshot}`);
+     }
+     await this.context.close();
+     await this.browser.close();
+   });
+   ```
+
+3. **Verificação Condicional do Resultado**:
+
+   Ao invés de uma verificação rígida, implementar uma verificação condicional pode tornar os testes menos suscetíveis a pequenas mudanças no texto exato retornado pela aplicação.
+
+   ```javascript
+   Then('I should see the flight search result', async function () {
+     const result = await this.marsAirPage.resultText.innerText();
+     const possibleResults = ['Unfortunately,', 'Congratulations,']; // Possíveis estado que o teste considera válidos
+     expect(possibleResults.some(substring => result.includes(substring))).toBeTruthy();
+   });
+   ```
+
+4. **Uso de Versões mais Recentes e Melhoria da Configuração de Teste**:
+
+   Certifique-se de que todas as dependências e o próprio Playwright estejam nas versões mais recentes para se beneficiar das melhorias e correções de bugs.
+
+   Verifique as configurações do Playwright em termos de rede, cache, e outros, que podem estar afetando os testes.
+
+5. **Manter as Sessões Limpa**:
+
+   Certifique-se de que após cada teste a sessão está limpa para que o estado de um teste não interfira em outro. Já está parcialmente coberto mas garantir que o contexto está completamente limpo é crucial.
+
+Ao aplicar estas boas práticas, os testes devem se tornar mais robustos e menos propensos a falhas não relacionadas a problemas reais da aplicação.
