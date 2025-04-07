@@ -7,6 +7,8 @@ const { baseUrl } = require('../../helpers/config');
 Before(async function () {
   this.browser = await chromium.launch({ headless: true });
   this.context = await this.browser.newContext();
+  this.page = await this.context.newPage();
+  this.marsAirPage = new MarsAirPage(this.page);
 });
 
 After(async function () {
@@ -15,8 +17,6 @@ After(async function () {
 });
 
 Given('I am on the Mars Air homepage', async function () {
-  const page = await this.context.newPage();
-  this.marsAirPage = new MarsAirPage(page);
   await this.marsAirPage.navigate(baseUrl);
 });
 
