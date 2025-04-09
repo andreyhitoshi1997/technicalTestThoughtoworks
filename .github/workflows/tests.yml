@@ -37,10 +37,10 @@ jobs:
 
       - name: Instalar k6
         run: |
-          curl -L https://github.com/grafana/k6/releases/latest/download/k6-linux-amd64.tar.gz -o k6.tar.gz
+          curl -L https://github.com/grafana/k6/releases/download/v0.51.0/k6-v0.51.0-linux-amd64.tar.gz -o k6.tar.gz
           tar -xzf k6.tar.gz
-          sudo mv k6-linux-amd64/k6 /usr/local/bin/
-          rm -rf k6.tar.gz k6-linux-amd64
+          sudo mv k6-v0.51.0-linux-amd64/k6 /usr/local/bin/
+          rm -rf k6.tar.gz k6-v0.51.0-linux-amd64
 
       - name: Executar testes de performance com k6
         run: k6 run marsair_test.js --out json=k6-report.json
