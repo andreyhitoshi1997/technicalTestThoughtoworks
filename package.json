@@ -5,7 +5,7 @@
   "scripts": {
     "test": "npx cucumber-js --require ./features/step_definitions/steps.js",
     "playwright": "npx playwright test",
-    "performance": "k6 run k6/script-performance.js",
+    "performance": "k6 run k6/script-performance.js --out json=k6-report.json",
     "analyze": "node ./helpers/analyze.js"
   },
   "dependencies": {

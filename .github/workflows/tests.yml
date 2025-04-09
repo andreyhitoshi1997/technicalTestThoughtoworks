@@ -43,7 +43,7 @@ jobs:
           rm -rf k6.tar.gz k6-v0.51.0-linux-amd64
 
       - name: Executar testes de performance com k6
-        run: npm run performance --out json=k6-report.json
+        run: npm run performance
 
       - name: Relatórios de Teste
         uses: actions/upload-artifact@v4
