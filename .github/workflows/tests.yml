@@ -31,13 +31,6 @@ jobs:
       - name: Executar testes Cucumber com Playwright
         run: npm run testCI
 
-      - name: Analisar com LLM (pular se SKIP_LLM=true)
-        if: env.SKIP_LLM != 'true'
-        run: npm run analyze
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          SKIP_LLM: ${{ env.SKIP_LLM }}
-
       - name: Instalar k6
         run: |
           curl -L https://github.com/grafana/k6/releases/download/v0.51.0/k6-v0.51.0-linux-amd64.tar.gz -o k6.tar.gz
