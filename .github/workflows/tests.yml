@@ -25,8 +25,11 @@ jobs:
       - name: Instalar navegadores do Playwright
         run: npx playwright install --with-deps
 
+      - name: Criar diretório para relatórios
+        run: mkdir -p test-reports
+
       - name: Executar testes Cucumber com Playwright
-        run: npm run test
+        run: npm run testCI
 
       - name: Analisar com LLM (pular se SKIP_LLM=true)
         if: env.SKIP_LLM != 'true'
@@ -45,11 +48,12 @@ jobs:
       - name: Executar testes de performance com k6
         run: npm run performance
 
-      - name: Relatórios de Teste
+      - name: Fazer upload dos relatórios de teste como artefato
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports
           path: |
-            test-results/
+            test-reports/
             playwright-report/
             k6-report.json
