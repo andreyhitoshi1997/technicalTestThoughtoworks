@@ -5,7 +5,7 @@ const { MarsAirPage } = require('../../pages/MarsAirPage');
 const { baseUrl } = require('../../helpers/config');
 
 Before(async function () {
-  this.browser = await chromium.launch({ headless: false });
+  this.browser = await chromium.launch({ headless: true });
   this.context = await this.browser.newContext();
   this.page = await this.context.newPage();
   this.marsAirPage = new MarsAirPage(this.page);
@@ -24,7 +24,7 @@ When('I search for a flight with departing {string} and returning {string} and a
   await this.marsAirPage.searchFlights(departing, returning, promoCode);
 });
 
-Then('I should see the flight search result', async function () {
+Then('I should see the message {string}', async function (messageResult) {
   const result = await this.marsAirPage.resultText.textContent();
-  expect(result).toContain('Unfortunately,');
+  expect(result).toContain(messageResult);
 });

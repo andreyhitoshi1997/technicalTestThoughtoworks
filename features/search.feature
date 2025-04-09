@@ -1,5 +1,5 @@
 Feature: Flight Search
   Scenario: Search for a valid flight
     Given I am on the Mars Air homepage
-    When I search for a flight with departing "July" and returning "December" and a "AF3-FJK-418"
-    Then I should see the flight search result
+    When I search for a flight with departing "July" and returning "July (next year)" and a "AB9-CDE943"
+    Then I should see the message "Sorry, there are no more seats available."
