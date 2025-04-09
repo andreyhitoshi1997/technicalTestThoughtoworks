@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "npx cucumber-js --require ./features/step_definitions/steps.js",
-     "testCI": "npx cucumber-js --require ./features/step_definitions/steps.js --format html:test-report.html",
+    "testCI": "npx cucumber-js --require ./features/step_definitions/steps.js --format html:test-report.html",
     "playwright": "npx playwright test",
     "performance": "k6 run k6/script-performance.js --out json=k6-report.json",
     "analyze": "node ./helpers/analyze.js"
