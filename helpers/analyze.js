@@ -23,7 +23,7 @@ const filePath = path.resolve(__dirname, '../test-results/last-run.json');
 
 try {
     const report = await parseJsonReport(filePath);
-
+    const featureFile = await fs.readFileSync(path.resolve(__dirname, '../features/search.feature'), 'utf-8')
     const automationCode = fs.readFileSync(path.resolve(__dirname, '../features/step_definitions/steps.js'), 'utf-8');
     const pageObject = fs.readFileSync(path.resolve(__dirname, '../pages/MarsAirPage.js'), 'utf-8');
 
@@ -33,6 +33,7 @@ try {
         1. O relatório de testes em JSON com Playwright.
         2. O código atual do step (steps.js).
         3. O código atual da page object (MarsAirPage.js).
+        4. O arquivo feature usando Cucumber js (search.feature)
 
         Analise o relatório e proponha **melhorias específicas no código** para torná-lo mais resiliente, auto adaptável (self-healing) e evitar falsos positivos ou falhas intermitentes.
 
@@ -44,6 +45,9 @@ try {
 
         ### Código MarsAirPage.js:
         ${pageObject}
+
+        ### Arquivo search.feature:
+        ${featureFile}
 
         Retorne sugestões de mudança com base nas boas práticas, explicando o motivo de cada ajuste.
         Responda em português e, se possível, cite trechos de código com a melhoria aplicada.

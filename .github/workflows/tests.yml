@@ -35,10 +35,20 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SKIP_LLM: ${{ env.SKIP_LLM }}
 
+      - name: Instalar k6
+        run: |
+          sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D83AC848
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Executar testes de performance com k6
+        run: k6 run marsair_test.js --out json=k6-report.json
+
       - name: Relatórios de Teste
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-reports
+          name: test-reports
           path: |
             test-results/
             playwright-report/
+            k6-report.json
