@@ -1,5 +1,4 @@
 /node_modules/
 package-lock.json
 readme.md
-k6-report.json
-/test-results/**/
+
