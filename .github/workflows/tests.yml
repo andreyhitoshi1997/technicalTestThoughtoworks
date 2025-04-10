@@ -32,7 +32,7 @@ jobs:
         run: mkdir -p test-results
 
       - name: Executar testes Cucumber com Playwright
-        run: npm run testCI
+        run: npm test
 
       - name: Instalar k6
         run: |
@@ -40,10 +40,8 @@ jobs:
           tar -xzf k6.tar.gz
           sudo mv k6-v0.51.0-linux-amd64/k6 /usr/local/bin/
           rm -rf k6.tar.gz k6-v0.51.0-linux-amd64
-
       - name: Executar testes de performance com k6
         run: npm run performance
-        continue-on-error: true
 
       - name: Fazer upload dos relatórios de teste como artefato
         if: always()
@@ -51,6 +49,6 @@ jobs:
         with:
           name: test-results
           path: |
-            test-results/last-run.html
-            test-results/last-run-k6.json
+            test-results/
             playwright-report/
+            k6-report.json
