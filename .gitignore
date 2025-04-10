@@ -2,4 +2,4 @@
 package-lock.json
 readme.md
 k6-report.json
-/test-result/
+/test-results/
