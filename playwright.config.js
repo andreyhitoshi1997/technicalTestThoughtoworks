@@ -7,16 +7,17 @@ export default defineConfig({
     retries: process.env.CI ? 2 : 0,
     reporter: [
         ['list'],
-        ['html', { open: 'never' }]
+        ['html', { open: 'never' }],
         ['json', { outputFile: 'test-results/results.json' }],
     ],
     use: {
         trace: 'on-first-retry',
+        headless: process.env.CI ? true : false,
     },
     projects: [
-    {
-        name: 'chromium',
-        use: { ...devices['Desktop Chrome'] },
-    },
+        {
+            name: 'chromium',
+            use: { ...devices['Desktop Chrome'] },
+        },
     ],
 });
