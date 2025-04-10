@@ -33,6 +33,8 @@ jobs:
 
       - name: Executar testes Cucumber com Playwright
         run: npm test
+        env:
+          HEADLESS_VALUE: ${{ secrets.HEADLESS_VALUE }}
 
       - name: Instalar k6
         run: |
@@ -40,6 +42,7 @@ jobs:
           tar -xzf k6.tar.gz
           sudo mv k6-v0.51.0-linux-amd64/k6 /usr/local/bin/
           rm -rf k6.tar.gz k6-v0.51.0-linux-amd64
+
       - name: Executar testes de performance com k6
         run: npm run performance
 
