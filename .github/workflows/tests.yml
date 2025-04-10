@@ -32,7 +32,7 @@ jobs:
         run: mkdir -p test-results
 
       - name: Executar testes Cucumber com Playwright
-        run: npm testCI
+        run: npm run testCI
 
       - name: Instalar k6
         run: |
