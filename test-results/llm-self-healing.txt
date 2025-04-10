@@ -1,0 +1,78 @@
+Com base na análise, algumas melhorias podem ser aplicadas para aumentar a resiliência, adaptabilidade e evitar falsos positivos nos testes. Abaixo estão algumas sugestões específicas:
+
+1. **Implementar Esperas Explícitas:**
+   Atualmente, o teste depende de um tempo de espera geral (`timeout`) ao selecionar opções ou digitar texto. Problemas de sincronização entre o script de teste e a interface podem ser uma fonte de falhas intermitentes. Podemos usar esperas explícitas para garantir que os elementos estejam carregados ou visíveis antes de interagir com eles.
+
+   ```javascript
+   async searchFlights(departing, returning, promoCode) {
+     await this.departingSelect.selectOption(departing);
+     await this.page.waitForSelector('select#returning:has(option[selected])');
+     await this.returningSelect.selectOption(returning);
+     await this.promoCodeInput.type(promoCode);
+     await this.searchButton.click();
+     await this.page.waitForSelector('#content > p:nth-child(2)');  // Esperar o resultado ser visível
+   }
+   ```
+
+2. **Reforçar o Validador de código promocional:**
+   Considerando que validamos os códigos promocionais regularmente, é uma boa prática validar formatadamente o código antes de usá-lo no teste. Assim, evitamos passar valores inválidos para a aplicação, que possam gerar falsos positivos.
+
+   ```javascript
+   function isValidPromoCode(promoCode) {
+     const promoCodePattern = /^[A-Z]{2}[0-9]-[A-Z]{3}-[0-9]{3}$/;
+     return promoCodePattern.test(promoCode);
+   }
+   ```
+   
+   ```javascript
+   When('I search for a flight with departing {string} and returning {string} and a {string}', async function (departing, returning, promoCode) {
+     if (!isValidPromoCode(promoCode)) {
+       throw new Error(`Invalid promo code format: ${promoCode}`);
+     }
+     await this.marsAirPage.searchFlights(departing, returning, promoCode);
+   });
+   ```
+
+3. **Uso de rollback para resetar o estado após falhas:**
+   Atualmente, é fechada a sessão do navegador, mas não há rollback explícito ou reset do estado anterior. Criar uma função para restaurar o estado ao inicial pode ajudar na execução contínua de testes sem interferências.
+
+   ```javascript
+   After(async function (scenario) {
+     try {
+       if (scenario.result.status === "failed") {
+         console.log(`Test failed. Reverting changes for the scenario: ${scenario.pickle.name}`);
+         await this.marsAirPage.navigate(baseUrl); // Reseta o estado inicial
+       }
+     } finally {
+       await this.context.close();
+       await this.browser.close();
+     }
+   });
+   ```
+
+4. **Melhorar a Resolução de Seletores:**
+   Dependendo de seletores fragilmente planejados — que dependem da hierarquia em CSS (`nth-child`) — pode tornar os testes suscetíveis a alterações mínimas na estrutura do DOM, algo que pode ser mitigado utilizando-se IDs ou classes mais precisos e menos dependentes do posicionamento.
+
+   ```javascript
+   this.resultText = page.locator('#booking_result');  // Exemplo de um seletor menos propenso à mudança
+   ```
+
+5. **Implemente logs de Debug:**
+   Adicione loggings detalhados para ajudar na análise após uma falha. Isso pode incluir dados sobre as execuções do teste, dados obtidos da página ou até mesmo as exceções.
+
+   ```javascript
+   try {
+     const result = await this.marsAirPage.resultText.textContent();
+     expect(result).toContain(messageResult);
+   } catch (error) {
+     console.error('Failed to validate message:', error);
+     console.info('Current page URL:', this.page.url());
+     console.info('Page content:', await this.page.content());
+     throw error;
+   }
+   ```
+
+6. **Separar Cassos de Teste de Negócio e Segurança:**
+   Testes para segurança ou input inválidos (como SQL Injection) podem estar separados. Considerando sua gravidade, eles podem rodar separadamente para manter a clareza nas execuções contínuas. 
+
+Essas mudanças podem ajudar a reduzir a susceptibilidade a falhas, manter os testes mais confiáveis e fornecer melhor rastreamento caso testes falhem.
