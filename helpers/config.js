@@ -1,2 +1,3 @@
 const baseUrl = 'https://marsair.recruiting.thoughtworks.net/AndreyOnoue';
-module.exports = { baseUrl };
+const headlessValue = false
+module.exports = { baseUrl, headlessValue };

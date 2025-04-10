@@ -2,10 +2,10 @@ const { Given, When, Then, Before, After } = require('@cucumber/cucumber');
 const { expect } = require('@playwright/test');
 const { chromium } = require('playwright');
 const { MarsAirPage } = require('../../pages/MarsAirPage');
-const { baseUrl } = require('../../helpers/config');
+const { baseUrl, headlessValue } = require('../../helpers/config');
 
 Before(async function () {
-  this.browser = await chromium.launch({ headless: true });
+  this.browser = await chromium.launch({ headless: headlessValue });
   this.context = await this.browser.newContext();
   this.page = await this.context.newPage();
   this.marsAirPage = new MarsAirPage(this.page);

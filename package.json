@@ -4,7 +4,6 @@
   "main": "index.js",
   "scripts": {
     "test": "npx cucumber-js --format json > test-results/last-run-playwright.json --format html:test-results/last-run-playwright.html",
-    "testCI": "HEADLESS=true npx cucumber-js --require ./features/step_definitions/steps.js --format html:test-results/last-run-playwrightCI.html",
     "performance": "k6 run k6/script-performance.js --out json=test-results/last-run-k6.json",
     "analyze": "node ./helpers/analyze.js"
   },
